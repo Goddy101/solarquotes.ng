@@ -11,13 +11,15 @@ const WHATSAPP_NUMBER = '2349168399707';
 interface LeadFormProps {
   prefillService: string;
   prefillDistrict: string;
+  formType: 'installation' | 'maintenance'; // THE FIX: Strict typing for intent
 }
 
-export default function LeadCaptureForm({ prefillService, prefillDistrict }: LeadFormProps) {
+export default function LeadCaptureForm({ prefillService, prefillDistrict, formType }: LeadFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const isResidential = prefillService.toLowerCase().includes('residential');
+  const isMaintenance = formType === 'maintenance';
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -27,8 +29,14 @@ export default function LeadCaptureForm({ prefillService, prefillDistrict }: Lea
     const clientName = formData.get('clientName') as string;
     const rawPhone = formData.get('phone') as string;
     const email = formData.get('email') as string;
+    
+    // Installation fields
     const buildingSize = formData.get('buildingSize') as string;
     const monthlySpend = formData.get('monthlySpend') as string;
+    
+    // Maintenance fields
+    const issueType = formData.get('issueType') as string;
+    const hardwareBrand = formData.get('hardwareBrand') as string;
     
     // ==========================================
     // ADVANCED NIGERIAN PHONE NORMALIZATION
@@ -49,13 +57,17 @@ export default function LeadCaptureForm({ prefillService, prefillDistrict }: Lea
     }
     // ==========================================
     
-    // Injecting the new fields into the JSONB metadata column
+    // Injecting the conditionally rendered fields into the JSONB metadata column
     const payload = {
       facility_name: clientName.trim(), 
       client_phone: cleanPhone,
       service_type: prefillService,
       geo_location: prefillDistrict,
-      metadata: {
+      metadata: isMaintenance ? {
+        email: email.trim(),
+        issue_type: issueType,
+        existing_hardware: hardwareBrand
+      } : {
         email: email.trim(),
         building_size: buildingSize,
         monthly_spend: monthlySpend
@@ -71,16 +83,25 @@ export default function LeadCaptureForm({ prefillService, prefillDistrict }: Lea
 
         if (dbError) throw new Error(dbError.message);
         
-        // 2. INSTANT WHATSAPP REDIRECT (With Enriched Data)
+        // 2. INSTANT WHATSAPP REDIRECT (With Intent-Specific Formatting)
         const encodedMessage = encodeURIComponent(
-          `*New ${isResidential ? 'Residential' : 'Commercial'} Lead from Website*\n\n` +
-          `*Location:* ${prefillDistrict}\n` +
-          `*Service:* ${prefillService}\n\n` +
-          `*Name:* ${clientName.trim()}\n` +
-          `*Phone:* +${cleanPhone}\n` +
-          `*Email:* ${email.trim()}\n` +
-          `*Size/Type:* ${buildingSize}\n` +
-          `*Monthly Spend:* ${monthlySpend}`
+          isMaintenance
+            ? `*URGENT: Maintenance Dispatch Request*\n\n` +
+              `*Location:* ${prefillDistrict}\n` +
+              `*Service:* ${prefillService}\n\n` +
+              `*Name:* ${clientName.trim()}\n` +
+              `*Phone:* +${cleanPhone}\n` +
+              `*Email:* ${email.trim()}\n` +
+              `*Primary Issue:* ${issueType}\n` +
+              `*Hardware:* ${hardwareBrand || 'Not specified'}`
+            : `*New ${isResidential ? 'Residential' : 'Commercial'} Lead from Website*\n\n` +
+              `*Location:* ${prefillDistrict}\n` +
+              `*Service:* ${prefillService}\n\n` +
+              `*Name:* ${clientName.trim()}\n` +
+              `*Phone:* +${cleanPhone}\n` +
+              `*Email:* ${email.trim()}\n` +
+              `*Size/Type:* ${buildingSize}\n` +
+              `*Monthly Spend:* ${monthlySpend}`
         );
         
         const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
@@ -103,7 +124,7 @@ export default function LeadCaptureForm({ prefillService, prefillDistrict }: Lea
       
       <div>
         <label htmlFor="clientName" className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-          {isResidential ? "Your Name / Estate" : "Facility / Business Name"}
+          {isMaintenance ? "Your Name / Facility Name" : (isResidential ? "Your Name / Estate" : "Facility / Business Name")}
         </label>
         <input 
           required 
@@ -145,62 +166,98 @@ export default function LeadCaptureForm({ prefillService, prefillDistrict }: Lea
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="buildingSize" className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-            {isResidential ? "Property Size" : "Facility Type"}
-          </label>
-          <select 
-            required 
-            name="buildingSize" 
-            id="buildingSize"
-            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2.5 bg-gray-50 text-gray-900 transition-colors text-sm"
-          >
-            <option value="">Select option...</option>
-            {isResidential ? (
-              <>
-                <option value="3-4 Bedroom Flat">3-4 Bedroom Flat</option>
-                <option value="5+ Bedroom Duplex">5+ Bedroom Duplex</option>
-                <option value="Entire Estate/Compound">Entire Estate/Compound</option>
-              </>
-            ) : (
-              <>
-                <option value="Office Plaza / HQ">Office Plaza / HQ</option>
-                <option value="Hospital / Clinic">Hospital / Clinic</option>
-                <option value="Factory / Manufacturing">Factory / Manufacturing</option>
-                <option value="Retail Mall / Supermarket">Retail Mall / Supermarket</option>
-                <option value="Hotel / Hospitality">Hotel / Hospitality</option>
-              </>
-            )}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="monthlySpend" className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-            Avg. Monthly Power/Diesel Bill
-          </label>
-          <select 
-            required 
-            name="monthlySpend" 
-            id="monthlySpend"
-            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2.5 bg-gray-50 text-gray-900 transition-colors text-sm"
-          >
-            <option value="">Select range...</option>
-            {isResidential ? (
-              <>
-                <option value="Under ₦50,000">Under ₦50,000</option>
-                <option value="₦50,000 - ₦150,000">₦50,000 - ₦150,000</option>
-                <option value="₦150,000 - ₦300,000">₦150,000 - ₦300,000</option>
-                <option value="Over ₦300,000">Over ₦300,000</option>
-              </>
-            ) : (
-              <>
-                <option value="Under ₦500,000">Under ₦500,000</option>
-                <option value="₦500,000 - ₦2,000,000">₦500,000 - ₦2,000,000</option>
-                <option value="₦2,000,000 - ₦5,000,000">₦2,000,000 - ₦5,000,000</option>
-                <option value="Over ₦5,000,000">Over ₦5,000,000</option>
-              </>
-            )}
-          </select>
-        </div>
+        {isMaintenance ? (
+          <>
+            <div>
+              <label htmlFor="issueType" className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                Primary Issue
+              </label>
+              <select 
+                required 
+                name="issueType" 
+                id="issueType"
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2.5 bg-gray-50 text-gray-900 transition-colors text-sm"
+              >
+                <option value="">Select an issue...</option>
+                <option value="Inverter Error/Fault Code">Inverter showing error/fault code</option>
+                <option value="Fast Battery Drain">Batteries draining too fast</option>
+                <option value="Panel Cleaning Needed">Solar panels need professional washing</option>
+                <option value="Complete Blackout">Complete system blackout</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="hardwareBrand" className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                Existing Hardware (Optional)
+              </label>
+              <input 
+                type="text" 
+                name="hardwareBrand" 
+                id="hardwareBrand"
+                placeholder="e.g. Victron, Deye, Felicity"
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2.5 bg-gray-50 text-gray-900 transition-colors text-sm" 
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <label htmlFor="buildingSize" className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                {isResidential ? "Property Size" : "Facility Type"}
+              </label>
+              <select 
+                required 
+                name="buildingSize" 
+                id="buildingSize"
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2.5 bg-gray-50 text-gray-900 transition-colors text-sm"
+              >
+                <option value="">Select option...</option>
+                {isResidential ? (
+                  <>
+                    <option value="3-4 Bedroom Flat">3-4 Bedroom Flat</option>
+                    <option value="5+ Bedroom Duplex">5+ Bedroom Duplex</option>
+                    <option value="Entire Estate/Compound">Entire Estate/Compound</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Office Plaza / HQ">Office Plaza / HQ</option>
+                    <option value="Hospital / Clinic">Hospital / Clinic</option>
+                    <option value="Factory / Manufacturing">Factory / Manufacturing</option>
+                    <option value="Retail Mall / Supermarket">Retail Mall / Supermarket</option>
+                    <option value="Hotel / Hospitality">Hotel / Hospitality</option>
+                  </>
+                )}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="monthlySpend" className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                Avg. Monthly Power/Diesel Bill
+              </label>
+              <select 
+                required 
+                name="monthlySpend" 
+                id="monthlySpend"
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2.5 bg-gray-50 text-gray-900 transition-colors text-sm"
+              >
+                <option value="">Select range...</option>
+                {isResidential ? (
+                  <>
+                    <option value="Under ₦50,000">Under ₦50,000</option>
+                    <option value="₦50,000 - ₦150,000">₦50,000 - ₦150,000</option>
+                    <option value="₦150,000 - ₦300,000">₦150,000 - ₦300,000</option>
+                    <option value="Over ₦300,000">Over ₦300,000</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Under ₦500,000">Under ₦500,000</option>
+                    <option value="₦500,000 - ₦2,000,000">₦500,000 - ₦2,000,000</option>
+                    <option value="₦2,000,000 - ₦5,000,000">₦2,000,000 - ₦5,000,000</option>
+                    <option value="Over ₦5,000,000">Over ₦5,000,000</option>
+                  </>
+                )}
+              </select>
+            </div>
+          </>
+        )}
       </div>
 
       <button 
@@ -217,7 +274,7 @@ export default function LeadCaptureForm({ prefillService, prefillDistrict }: Lea
             Routing to Engineering Desk...
           </span>
         ) : (
-          isResidential ? "Get Home Solar Quote" : "Request Commercial Audit"
+          isMaintenance ? "Request Immediate Dispatch" : (isResidential ? "Get Home Solar Quote" : "Request Commercial Audit")
         )}
       </button>
       

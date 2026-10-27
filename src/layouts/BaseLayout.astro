@@ -5,19 +5,19 @@ export interface Props {
   title: string;
   description: string;
   ogImage?: string;
+  schema?: object; // THE FIX: Accepts structured data for AI Engines
 }
 
-// THE FIX: We must extract ogImage here and give it a fallback!
 const { 
   title, 
   description,
-  ogImage = 'https://solarquotes.com.ng/og?title=Tier%201%20Solar%20Engineering&subtitle=Solar%20Quotes%20Nigeria'
+  ogImage = 'https://solarquotes.com.ng/og?title=Tier%201%20Solar%20Engineering&subtitle=Solar%20Quotes%20Nigeria',
+  schema 
 } = Astro.props;
 
 // Your central dispatch number for the sticky CTAs
 const WHATSAPP_NUMBER = "2349168399707"; 
 const WHATSAPP_LINK = `https://wa.me/2349168399707?text=Hello%20Solar%20Quotes,%20I%20am%20interested%20in%20a%20solar%20audit.`;
----
 ---
 
 <!DOCTYPE html>
@@ -30,7 +30,6 @@ const WHATSAPP_LINK = `https://wa.me/2349168399707?text=Hello%20Solar%20Quotes,%
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
 
-
     <meta property="og:image" content={ogImage} />
     <meta name="twitter:image" content={ogImage} />
     <meta name="twitter:card" content="summary_large_image" />
@@ -39,6 +38,11 @@ const WHATSAPP_LINK = `https://wa.me/2349168399707?text=Hello%20Solar%20Quotes,%
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+
+    <!-- AI & Answer Engine Optimization (JSON-LD) -->
+    {schema && (
+      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    )}
   </head>
   
   <body class="flex flex-col min-h-screen bg-white text-gray-900 antialiased selection:bg-emerald-500 selection:text-white">

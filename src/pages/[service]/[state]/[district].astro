@@ -43,6 +43,7 @@ export async function getStaticPaths() {
       const district = {
         slug: dbDistrict.slug,
         name: dbDistrict.name,
+        coordinates: dbDistrict.coordinates,
         gridBand: dbDistrict.grid_band,
         averageDailyOutage: dbDistrict.average_daily_outage,
         primaryGridIssue: dbDistrict.primary_grid_issue,
@@ -66,24 +67,93 @@ export async function getStaticPaths() {
 // 2. EXTRACT PROPS & CONTEXT
 const { service, state, district } = Astro.props;
 const isResidential = service.market === 'residential';
-const marketPrefix = isResidential ? 'Home' : 'Commercial';
+const isMaintenance = service.slug.includes('maintenance') || service.slug.includes('repair') || service.slug.includes('cleaning');
+const marketPrefix = isMaintenance ? 'Technical' : (isResidential ? 'Home' : 'Commercial');
 
-// 3. THE SPINTAX ENGINE (Avoiding Google's Boilerplate Penalty)
-const intros = {
-  residential: [
-    `For homeowners and estates in the ${district.name} axis (near ${district.localLandmarks.join(" and ")}), the constant noise and expense of petrol generators is no longer sustainable.`,
-    `Residents near ${district.localLandmarks[0]} in ${district.name} are tired of burning expensive petrol during ${district.averageDailyOutage} outages. A silent microgrid is the permanent fix.`,
-    `If you live in ${district.name}, specifically around ${district.localLandmarks[0]}, you know the frustration of ${state.gridProvider}'s unpredictable grid. It's time to upgrade your home's equity.`
-  ],
-  commercial: [
-    `For ${district.targetSectors.join(" and ")} operating in the ${district.name} axis (near ${district.localLandmarks[0]}), grid instability is a direct threat to operational profitability.`,
-    `Business operations around ${district.localLandmarks[0]} in ${district.name} are losing millions to diesel costs during ${district.averageDailyOutage} grid outages.`,
-    `With diesel at ${state.dieselCostEstimate}, ${district.targetSectors[0]} facilities in ${district.name} need a permanent solution to ${state.gridProvider}'s severe grid failures.`
-  ]
+// Safe variable fallbacks to prevent build crashes
+const landmark = district.localLandmarks?.[0] || district.name;
+const sectors = district.targetSectors?.join(" and ") || "businesses";
+
+// 3. COMBINATORIAL SPINTAX ENGINE (Zero-Boilerplate Architecture)
+const spintax = {
+  residential: {
+    hooks: [
+      `For homeowners and premium estates in the ${district.name} axis, `,
+      `If you reside near ${landmark}, `,
+      `Property owners in ${district.name} know firsthand that `,
+      `Families living in the ${district.name} district are increasingly realizing that `
+    ],
+    agitations: [
+      `enduring ${district.averageDailyOutage} of daily outages on the ${state.gridProvider} grid is no longer sustainable. `,
+      `the relentless noise and soaring cost of petrol generators is destroying home comfort. `,
+      `relying on unpredictable voltage from the ${district.gridBand} band actively damages expensive home appliances. `,
+      `waking up to pitch-black nights due to persistent ${state.gridProvider} failures is a massive security risk. `
+    ],
+    solutions: [
+      `It is time to upgrade your property's equity with a silent, zero-emission ${service.title.toLowerCase()} system.`,
+      `We engineer Tier-1 solar microgrids that permanently eliminate petrol dependency for your household.`,
+      `Our localized deployment team provides pure sine-wave inverter systems designed for optimal residential load balancing.`,
+      `Stop burning cash on fuel. Transition to an SLA-backed solar array engineered for Nigeria's toughest grid environments.`
+    ]
+  },
+  commercial: {
+    hooks: [
+      `For ${sectors} operating in the ${district.name} commercial hub, `,
+      `Corporate facilities and heavy-load operations near ${landmark} understand that `,
+      `In the competitive business landscape of ${district.name}, `,
+      `Industrial and commercial managers relying on the ${district.name} axis know that `
+    ],
+    agitations: [
+      `grid instability and ${district.averageDailyOutage} blackouts are a direct threat to operational profitability. `,
+      `burning diesel at ${state.dieselCostEstimate} to mitigate ${state.gridProvider}'s unreliability is bleeding capital. `,
+      `phase drops and severe voltage fluctuations on the ${district.gridBand} band cause catastrophic hardware failures. `,
+      `unplanned downtime from ${district.primaryGridIssue} actively disrupts supply chains and client service. `
+    ],
+    solutions: [
+      `We deploy enterprise-grade ${service.title.toLowerCase()} arrays with ${district.slaDispatchMinutes}-minute SLA support to guarantee zero downtime.`,
+      `Our synchronized hybrid microgrids are specifically engineered to stabilize extreme phase imbalances and eliminate diesel costs.`,
+      `Protect your bottom line with a high-capacity commercial solar infrastructure designed for heavy inductive loads.`,
+      `We replace diesel generators with smart grid-tie inverter racks, providing medical-grade power security and massive ROI.`
+    ]
+  },
+  maintenance: {
+    hooks: [
+      `Is your existing solar installation underperforming in ${district.name}? `,
+      `If your inverter is throwing fault codes or batteries are draining too fast near ${landmark}, `,
+      `For properties in ${district.name} dealing with degraded solar performance, `,
+      `Don't let a poorly maintained solar setup leave you in the dark during ${state.gridProvider} outages. `
+    ],
+    agitations: [
+      `Severe dust buildup on panels can secretly reduce your energy yield by up to 40%. `,
+      `Degraded lithium racks and poor cabling actively create fire hazards and system bottlenecks. `,
+      `Ignoring routine diagnostic checks often turns minor ${district.primaryGridIssue} impacts into catastrophic inverter failures. `,
+      `Many legacy systems suffer from improper load-balancing, causing them to trip immediately when the grid fails. `
+    ],
+    solutions: [
+      `Our rapid-dispatch technical team provides SLA-backed panel washing, thermal imaging, and fault tracing.`,
+      `We offer professional ${service.title.toLowerCase()} to restore your array to 100% factory-rated efficiency.`,
+      `Book a comprehensive engineering audit. We handle battery cell balancing, firmware updates, and total system optimization.`,
+      `Our engineers are on standby in ${state.name} to execute rapid inverter repairs, re-wiring, and OEM hardware upgrades.`
+    ]
+  }
 };
 
-const introIndex = district.name.length % 3;
-const dynamicIntro = isResidential ? intros.residential[introIndex] : intros.commercial[introIndex];
+// 4. DETERMINISTIC HASHING (Guarantees the same URL always gets the exact same copy)
+// We use the ASCII values of the district and service slugs to generate a permanent, unique index.
+const hash = district.slug.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) + 
+             service.slug.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
+const marketKey = isMaintenance ? 'maintenance' : (isResidential ? 'residential' : 'commercial');
+const activeSpintax = spintax[marketKey];
+
+const hookIndex = hash % activeSpintax.hooks.length;
+const agitationIndex = (hash * 2) % activeSpintax.agitations.length;
+const solutionIndex = (hash * 3) % activeSpintax.solutions.length;
+
+const dynamicIntro = 
+  activeSpintax.hooks[hookIndex] + 
+  activeSpintax.agitations[agitationIndex] + 
+  activeSpintax.solutions[solutionIndex];
 
 // 4. THE DETERMINISTIC IMAGE MATRIX (R2 Bucket)
 const CDN_URL = 'https://cdn.solarquotes.com.ng'; 
@@ -109,7 +179,7 @@ const stringHash = service.slug.length + district.name.length;
 const imageIndex = stringHash % imagePool.length;
 const dynamicHeroImage = imagePool[imageIndex];
 
-// 5. DYNAMIC METADATA & SCHEMA
+// 5. ENRICHED GEO & AI SCHEMA
 const pageTitle = `${marketPrefix} ${service.title} in ${district.name}, ${state.name} | Solar Quotes`;
 const metaDescription = isResidential 
   ? `Stop burning petrol during ${district.averageDailyOutage} outages on ${state.gridProvider}. We provide silent, zero-emission ${service.title.toLowerCase()} near ${district.localLandmarks[0]}.`
@@ -123,11 +193,18 @@ const schema = {
     "@type": "LocalBusiness",
     "name": "Solar Quotes Nigeria",
     "image": "https://solarquotes.com.ng/logo.png",
+    "telephone": "+2349168399707",
+    "priceRange": "$$$",
     "address": {
       "@type": "PostalAddress",
       "addressLocality": district.name,
       "addressRegion": state.name,
       "addressCountry": "NG"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": district.coordinates?.lat || "9.0765",
+      "longitude": district.coordinates?.lng || "7.3986"
     }
   },
   "areaServed": {
@@ -144,8 +221,8 @@ const bgFilename = dynamicHeroImage.split('/').pop();
 const ogImageUrl = `https://solarquotes.com.ng/og?title=${encodedTitle}&subtitle=${encodedSubtitle}&bg=${bgFilename}`;
 ---
 
-<BaseLayout title={pageTitle} description={metaDescription} ogImage={ogImageUrl}>
-  <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+<!-- THE FIX: Pass schema directly to BaseLayout so it goes into the <head> -->
+<BaseLayout title={pageTitle} description={metaDescription} ogImage={ogImageUrl} schema={schema}>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <Breadcrumbs 
@@ -179,7 +256,7 @@ const ogImageUrl = `https://solarquotes.com.ng/og?title=${encodedTitle}&subtitle
           </div>
         </div>
         
-        <!-- Pain Point Agitation (Powered by Spintax) -->
+        <!-- Pain Point Agitation -->
         <div class="prose prose-lg text-gray-600 max-w-none">
            <p>{dynamicIntro}</p>
            <p>
@@ -201,36 +278,45 @@ const ogImageUrl = `https://solarquotes.com.ng/og?title=${encodedTitle}&subtitle
           </div>
         )}
 
-        <!-- Technical Authority (The Moat) -->
-        <div class="bg-gray-50 border border-gray-100 rounded-2xl p-8 shadow-sm">
-          <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-            <svg class="h-6 w-6 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            Localized Engineering Context: {district.name}
-          </h3>
-          <p class="text-gray-700 mb-4">
-            Our engineering teams respond to specific infrastructural challenges in this district. We actively mitigate:
-          </p>
-          <ul class="space-y-3">
-            <li class="flex items-start">
-              <svg class="h-6 w-6 text-red-500 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              <span class="text-gray-700"><strong>Grid Issue:</strong> {district.primaryGridIssue}</span>
-            </li>
-            <li class="flex items-start">
-              <svg class="h-6 w-6 text-red-500 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              <span class="text-gray-700"><strong>Common Hardware Failures:</strong> {district.commonHardwareFailures.join(" and ")}.</span>
-            </li>
-            <li class="flex items-start">
-              <svg class="h-6 w-6 text-amber-500 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
-              <span class="text-gray-700"><strong>Environmental Impact:</strong> {state.environment.weatherChallenge}</span>
-            </li>
-          </ul>
+        <!-- THE FIX: AI-Optimized Semantic Data Table -->
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-bold text-gray-900 flex items-center">
+              <svg class="h-5 w-5 text-emerald-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              Localized Engineering Data: {district.name}
+            </h3>
+          </div>
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <tbody class="divide-y divide-gray-200 bg-white">
+              <tr class="hover:bg-gray-50 transition-colors">
+                <th scope="row" class="px-6 py-4 font-semibold text-gray-900 text-left w-1/3">Utility Grid Band</th>
+                <td class="px-6 py-4 text-gray-700">{district.gridBand} ({state.gridProvider})</td>
+              </tr>
+              <tr class="hover:bg-gray-50 transition-colors">
+                <th scope="row" class="px-6 py-4 font-semibold text-gray-900 text-left">Average Outage Duration</th>
+                <td class="px-6 py-4 text-gray-700 font-medium text-red-600">{district.averageDailyOutage}</td>
+              </tr>
+              <tr class="hover:bg-gray-50 transition-colors">
+                <th scope="row" class="px-6 py-4 font-semibold text-gray-900 text-left">Primary Grid Issue</th>
+                <td class="px-6 py-4 text-gray-700">{district.primaryGridIssue}</td>
+              </tr>
+              <tr class="hover:bg-gray-50 transition-colors">
+                <th scope="row" class="px-6 py-4 font-semibold text-gray-900 text-left">Mitigated Hardware Risks</th>
+                <td class="px-6 py-4 text-gray-700">{district.commonHardwareFailures.join(" & ")}</td>
+              </tr>
+              <tr class="hover:bg-gray-50 transition-colors">
+                <th scope="row" class="px-6 py-4 font-semibold text-gray-900 text-left">SLA Response Target</th>
+                <td class="px-6 py-4 text-gray-700 font-medium text-emerald-600">{district.slaDispatchMinutes} Minutes</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
       <!-- RIGHT COL: Conversion Island -->
       <aside class="lg:col-span-5 relative">
-        <div class="sticky top-8 bg-white p-8 rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-          <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+        <div class="sticky top-28 bg-white p-8 rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          <div class="absolute top-0 left-0 w-full h-1.5 bg-emerald-500"></div>
           
           <h3 class="text-2xl font-bold text-gray-900 mb-2">
             {isResidential ? "Get a Home Solar Quote" : "Book a Commercial Audit"}
@@ -239,11 +325,12 @@ const ogImageUrl = `https://solarquotes.com.ng/og?title=${encodedTitle}&subtitle
             Bypass the call center. Connect directly with our {state.name} technical dispatch via WhatsApp.
           </p>
           
-          <!-- React Island: Hydrates only this form -->
+        <!-- React Island: Hydrates only this form -->
           <LeadCaptureForm 
             client:load 
             prefillService={service.title} 
-            prefillDistrict={district.name} 
+            prefillDistrict={district.name}
+            formType={isMaintenance ? 'maintenance' : 'installation'} 
           />
           
           <div class="mt-6 pt-6 border-t border-gray-100 text-center">
