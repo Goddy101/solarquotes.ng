@@ -1,0 +1,126 @@
+---
+interface GeoCoordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface Props {
+  type?: string; 
+  name?: string;
+  serviceArea: string;
+  serviceType: string;
+  coordinates?: GeoCoordinates;
+  targetSectors?: string[];
+  slaMinutes?: number;
+  hasReviews?: boolean; // Set to true ONLY when you add real testimonials to the page
+}
+
+const { 
+  type = "ServiceAreaBusiness", 
+  name = "Solar Quotes", 
+  serviceArea, 
+  serviceType, 
+  coordinates, 
+  targetSectors = [], 
+  slaMinutes = 240,
+  hasReviews = false
+} = Astro.props;
+
+// 1. DYNAMIC CANONICAL URL (Failsafe against GSC mismatch errors)
+// Astro automatically grabs the exact requested URL (e.g., https://solarquotes.com.ng/commercial-solar/fct/wuse)
+const currentUrl = Astro.url.href;
+const baseUrl = Astro.site?.href || "https://solarquotes.com.ng";
+
+// 2. Map target sectors into Schema Audience objects
+const audienceData = targetSectors.map(sector => ({
+  "@type": "Audience",
+  "audienceType": sector
+}));
+
+// 3. Construct the comprehensive Entity Graph
+const schema = {
+  "@context": "https://schema.org",
+  "@type": [type, "LocalBusiness"],
+  "@id": `${baseUrl}/#organization`,
+  "name": name,
+  "legalName": "Solar Quotes Nigeria",
+  "url": currentUrl,
+  "logo": `${baseUrl}/assets/logo.webp`,
+  "image": [
+    `${baseUrl}/assets/hero-commercial.webp`,
+    `${baseUrl}/assets/tech-maintenance.webp`
+  ],
+  "telephone": "+2349168399707",
+  "email": "dispatch@solarquotes.com.ng",
+  "priceRange": "₦₦₦",
+  "description": `Commercial ${serviceType} providing rapid technical dispatch for facilities located in ${serviceArea}. We ensure minimal downtime for enterprise operations.`,
+  
+  // Base Headquarters Address (Crucial for LocalBusiness validation, even without a public office)
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Abuja",
+    "addressRegion": "Federal Capital Territory",
+    "addressCountry": "NG"
+  },
+  
+  "openingHoursSpecification": {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": [
+      "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+    ],
+    "opens": "00:00",
+    "closes": "23:59"
+  },
+
+  "areaServed": {
+    "@type": "Place",
+    "name": serviceArea,
+    ...(coordinates && {
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": coordinates.lat,
+        "longitude": coordinates.lng
+      }
+    })
+  },
+
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Commercial Solar Solutions",
+    "itemListElement": [
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Service",
+          "name": serviceType,
+          "serviceType": serviceType,
+          "audience": audienceData
+        },
+        "deliveryLeadTime": {
+          "@type": "QuantitativeValue",
+          "value": slaMinutes,
+          "unitCode": "MIN"
+        }
+      }
+    ]
+  },
+
+  // Conditionally inject reviews ONLY if they exist on the page
+  ...(hasReviews && {
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "24",
+      "bestRating": "5",
+      "worstRating": "1"
+    }
+  }),
+
+  "sameAs": [
+    "https://www.linkedin.com/company/solarquotes-ng",
+    "https://twitter.com/solarquotesng"
+  ]
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />

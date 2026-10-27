@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CASE_STUDIES, type CaseStudy } from '../../data/caseStudies';
+
+const title = "Solar Engineering Case Studies | Solar Quotes Nigeria";
+const description = "Explore our portfolio of Tier-1 commercial, industrial, and residential solar hybrid installations across Nigeria.";
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "itemListElement": CASE_STUDIES.map((study: CaseStudy, index: number) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "url": `https://solarquotes.com.ng/case-studies/${study.slug}`
+  }))
+};
+---
+
+<BaseLayout title={title} description={description}>
+  <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-16 max-w-3xl">
+      <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">Engineering <span class="text-emerald-600">Case Studies</span></h1>
+      <p class="text-xl text-gray-600">Real-world deployments mitigating grid instability, phase imbalances, and diesel bleed across Nigeria's toughest infrastructural environments.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {CASE_STUDIES.map((study: CaseStudy) => (
+        <a href={`/case-studies/${study.slug}`} class="group flex flex-col bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl hover:border-emerald-200 transition-all h-full">
+          
+          <div class="flex flex-wrap items-center gap-3 mb-6">
+            <span class="bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-md group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-colors">
+              {study.market}
+            </span>
+            <span class="text-gray-400 text-sm font-medium flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              {study.location.district}, {study.location.state}
+            </span>
+          </div>
+          
+          <h2 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-emerald-700 transition-colors">
+            {study.title}
+          </h2>
+          
+          <p class="text-gray-600 mb-8 line-clamp-3 flex-grow">
+            {study.executiveSummary}
+          </p>
+          
+          <div class="grid grid-cols-3 gap-4 pt-6 border-t border-gray-100 mt-auto">
+            <div class="col-span-1">
+              <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Topology</p>
+              <p class="text-gray-900 font-bold text-sm truncate" title={study.architecture.inverterTopology}>
+                {study.architecture.inverterTopology.split(' ')[0]}
+              </p>
+            </div>
+            <div class="col-span-1">
+              <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Monthly Savings</p>
+              <p class="text-emerald-600 font-bold text-sm">
+                {study.financials.monthlyNairaSavings}
+              </p>
+            </div>
+            <div class="col-span-1 border-l border-gray-100 pl-4">
+              <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Proj. IRR</p>
+              <p class="text-gray-900 font-extrabold text-sm">
+                {study.financials.irr}
+              </p>
+            </div>
+          </div>
+          
+        </a>
+      ))}
+    </div>
+  </main>
+</BaseLayout>

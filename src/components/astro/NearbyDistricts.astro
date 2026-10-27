@@ -1,0 +1,84 @@
+---
+import { NIGERIA_LOCATIONS } from '../../data/locations';
+
+export interface Props {
+  currentServiceSlug: string;
+  currentStateSlug: string;
+  currentDistrictSlug: string;
+}
+
+const { currentServiceSlug, currentStateSlug, currentDistrictSlug } = Astro.props;
+
+const stateData = NIGERIA_LOCATIONS.find(s => s.slug === currentStateSlug);
+if (!stateData) return null;
+
+const allDistricts = stateData.districts;
+if (allDistricts.length <= 1) return null;
+
+// 1. Find where we currently are in the array
+const currentIndex = allDistricts.findIndex(d => d.slug === currentDistrictSlug);
+const safeIndex = currentIndex >= 0 ? currentIndex : 0;
+
+// 2. Circular Shift: Grab the *next* 6 districts to create a perfect SEO mesh
+const nearbyDistricts = [];
+const maxLinks = Math.min(6, allDistricts.length - 1);
+
+for (let i = 1; i <= maxLinks; i++) {
+  // The modulo operator (%) wraps the index back to 0 when it hits the end of the array
+  const nextIndex = (safeIndex + i) % allDistricts.length;
+  nearbyDistricts.push(allDistricts[nextIndex]);
+}
+---
+
+<!-- The HTML/UI section remains EXACTLY the same -->
+<section class="border-t border-gray-200 bg-white py-12 px-4 sm:px-6 lg:px-8">
+...
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900">Other Service Areas in {stateData.name}</h2>
+        <p class="text-gray-500 text-sm mt-1">Our engineering teams also provide rapid dispatch to these nearby hubs.</p>
+      </div>
+      <div class="hidden sm:block">
+        <a href="/#locations" class="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+          View all locations &rarr;
+        </a>
+      </div>
+    </div>
+
+    <!-- Semantic navigation list for SEO -->
+    <nav aria-label="Nearby service areas">
+      <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {nearbyDistricts.map((district) => (
+          <li>
+            <a 
+              href={`/${currentServiceSlug}/${currentStateSlug}/${district.slug}/`}
+              class="group flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-emerald-50 hover:border-emerald-100 transition-all shadow-sm hover:shadow-md"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center group-hover:border-emerald-200 transition-colors">
+                  <svg class="w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <div>
+                  <span class="block font-bold text-gray-900 group-hover:text-emerald-800 transition-colors">
+                    {district.name}
+                  </span>
+                  <span class="block text-xs text-gray-500">
+                    SLA: {district.slaDispatchMinutes} min dispatch
+                  </span>
+                </div>
+              </div>
+              <svg class="w-5 h-5 text-gray-300 group-hover:text-emerald-500 transition-colors transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    
+    <div class="mt-6 sm:hidden">
+      <a href="/#locations" class="block w-full text-center bg-gray-50 border border-gray-200 rounded-lg py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100">
+        View all national locations
+      </a>
+    </div>
+  </div>
+</section>

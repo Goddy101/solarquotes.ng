@@ -1,0 +1,40 @@
+---
+export interface Props {
+  currentService: string;
+  currentState: string;
+  currentDistrict: string;
+}
+
+const { currentService, currentState, currentDistrict } = Astro.props;
+---
+<nav aria-label="Breadcrumb" class="flex text-sm text-gray-500 mb-6">
+  <ol class="flex items-center space-x-1 sm:space-x-2 flex-wrap">
+    <!-- Level 1: Home -->
+    <li>
+      <a href="/" class="hover:text-emerald-600 transition-colors font-medium">
+        Home
+      </a>
+    </li>
+    
+    <li><span class="text-gray-300 mx-1">/</span></li>
+    
+    <!-- Level 2: Service Type -->
+    <li class="hidden sm:block">
+      <span class="text-gray-500 font-medium">{currentService}</span>
+    </li>
+    
+    <li class="hidden sm:block"><span class="text-gray-300 mx-1">/</span></li>
+    
+    <!-- Level 3: State/Region -->
+    <li>
+      <span class="text-gray-500 font-medium">{currentState}</span>
+    </li>
+    
+    <li><span class="text-gray-300 mx-1">/</span></li>
+    
+    <!-- Level 4: Current District (Active) -->
+    <li class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md" aria-current="page">
+      {currentDistrict}
+    </li>
+  </ol>
+</nav>

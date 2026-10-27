@@ -1,0 +1,121 @@
+---
+// src/components/astro/Header.astro
+---
+<header class="sticky top-0 z-50 w-full backdrop-blur-md bg-white/90 border-b border-gray-100 shadow-sm transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+    <!-- Brand Logo -->
+    <a href="/" class="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-xl p-1">
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white font-extrabold text-xl shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
+        SQ
+      </div>
+      <div class="flex flex-col">
+        <span class="text-xl font-black tracking-tight text-gray-900 leading-none group-hover:text-emerald-700 transition-colors">
+          Solar <span class="text-emerald-600">Quotes</span>
+        </span>
+        <span class="text-[10px] uppercase tracking-widest font-bold text-gray-500 mt-0.5">
+          Commercial Energy
+        </span>
+      </div>
+    </a>
+
+    <!-- Desktop Navigation -->
+    <div class="hidden md:flex items-center gap-8">
+      <nav class="flex items-center gap-6 text-sm font-semibold text-gray-600">
+        <a href="/" class="hover:text-emerald-600 transition-colors">Home</a>
+        <a href="/commercial-solar-installation/fct/wuse" class="hover:text-emerald-600 transition-colors">Abuja Hubs</a>
+        <a href="/#services" class="hover:text-emerald-600 transition-colors">Services</a>
+      </nav>
+
+      <div class="h-6 w-px bg-gray-200"></div> <!-- Vertical Divider -->
+
+      <a 
+        href="/#lead-form" 
+        class="inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+      >
+        Book Audit
+      </a>
+    </div>
+
+    <!-- Mobile Menu Toggle Button -->
+    <button 
+      id="mobile-menu-toggle"
+      class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+      aria-expanded="false"
+    >
+      <span class="sr-only">Open main menu</span>
+      <svg class="block h-6 w-6 transition-opacity" id="icon-menu" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+      <svg class="hidden h-6 w-6 transition-opacity" id="icon-close" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Mobile Navigation Dropdown -->
+  <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 shadow-xl absolute w-full left-0 origin-top transform transition-all">
+    <div class="px-4 pt-2 pb-6 space-y-1">
+      <a href="/" class="block px-4 py-3 rounded-xl text-base font-semibold text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 transition-colors">Home</a>
+      <a href="/commercial-solar-installation/fct/wuse" class="block px-4 py-3 rounded-xl text-base font-semibold text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 transition-colors">Abuja Hubs</a>
+      <a href="/#services" class="block px-4 py-3 rounded-xl text-base font-semibold text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 transition-colors">Services</a>
+      
+      <div class="mt-4 pt-4 border-t border-gray-100">
+        <a 
+          href="/#lead-form" 
+          class="flex items-center justify-center w-full px-5 py-3.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-colors"
+        >
+          Book Commercial Audit
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Enterprise-Grade Astro JavaScript for the Mobile Menu -->
+<script>
+  function initMobileMenu() {
+    const toggleBtn = document.getElementById('mobile-menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const iconMenu = document.getElementById('icon-menu');
+    const iconClose = document.getElementById('icon-close');
+    const menuLinks = mobileMenu?.querySelectorAll('a');
+
+    if (!toggleBtn || !mobileMenu) return;
+
+    const toggleMenu = () => {
+      const isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+      toggleBtn.setAttribute('aria-expanded', (!isExpanded).toString());
+      
+      mobileMenu.classList.toggle('hidden');
+      iconMenu?.classList.toggle('hidden');
+      iconClose?.classList.toggle('hidden');
+    };
+
+    // Prevent duplicate event listeners during client-side routing
+    toggleBtn.replaceWith(toggleBtn.cloneNode(true));
+    const newToggleBtn = document.getElementById('mobile-menu-toggle');
+    newToggleBtn?.addEventListener('click', toggleMenu);
+
+    menuLinks?.forEach(link => {
+      link.addEventListener('click', () => {
+        if (!mobileMenu.classList.contains('hidden')) {
+          toggleMenu();
+        }
+      });
+    });
+
+    document.addEventListener('click', (event) => {
+      const target = event.target as Node;
+      const isMenuOpen = !mobileMenu.classList.contains('hidden');
+      const clickedInsideMenu = mobileMenu.contains(target);
+      const clickedToggleButton = newToggleBtn?.contains(target);
+
+      if (isMenuOpen && !clickedInsideMenu && !clickedToggleButton) {
+        toggleMenu();
+      }
+    });
+  }
+
+  initMobileMenu();
+  document.addEventListener('astro:page-load', initMobileMenu);
+</script>

@@ -1,0 +1,53 @@
+# =======================================================================
+# SOLAR QUOTES NIGERIA - ROBOTS.TXT
+# =======================================================================
+# Domain: https://solarquotes.com.ng
+# Standard: 2026 Enterprise SEO & AEO (Answer Engine Optimization)
+# =======================================================================
+
+# -----------------------------------------------------------------------
+# 1. SITEMAP DECLARATION (CRITICAL FOR pSEO)
+# -----------------------------------------------------------------------
+# This tells Google/Bing exactly where to find the 68+ dynamic location pages
+Sitemap: https://solarquotes.com.ng/sitemap.xml
+
+# -----------------------------------------------------------------------
+# 2. GLOBAL CRAWLER RULES (Googlebot, Bingbot, Perplexity, GPTBot)
+# -----------------------------------------------------------------------
+User-agent: *
+Allow: /
+
+# Prevent crawling of backend Edge API routes (Saves Cloudflare compute costs)
+Disallow: /api/
+
+# Prevent crawling of internal admin routes (Future-proofing)
+Disallow: /admin/
+
+# Prevent crawl traps and duplicate content penalties from query parameters
+# e.g., blocks /residential-solar-installation/fct/wuse?ref=facebook
+Disallow: /*?*
+
+# -----------------------------------------------------------------------
+# 3. BLOCKLIST: AGGRESSIVE SCRAPERS & SPAM BOTS
+# -----------------------------------------------------------------------
+# These bots ignore rate limits, steal content, and offer zero SEO value.
+
+# Block ByteDance/TikTok scraper
+User-agent: Bytespider
+Disallow: /
+
+# Block CommonCrawl (Reduces scraping by generic AI datasets)
+User-agent: CCBot
+Disallow: /
+
+# Block Amazon's crawler
+User-agent: Amazonbot
+Disallow: /
+
+# Block PetalBot (Known for aggressive, bandwidth-heavy crawling)
+User-agent: PetalBot
+Disallow: /
+
+# Block DataForSeo (Competitor intelligence scraping)
+User-agent: DataForSeoBot
+Disallow: /

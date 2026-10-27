@@ -1,0 +1,261 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LeadCaptureForm from '../../../components/react/LeadCaptureForm';
+import DieselRoiCalculator from '../../../components/react/DieselRoiCalculator'; 
+import Breadcrumbs from '../../../components/astro/Breadcrumbs.astro';
+import NearbyDistricts from '../../../components/astro/NearbyDistricts.astro';
+import { supabase } from '../../../lib/supabase';
+
+// 1. GENERATE ALL ROUTES AT BUILD TIME FROM SUPABASE
+export async function getStaticPaths() {
+  const { data: dbServices, error: servicesError } = await supabase
+    .from('services')
+    .select('*');
+
+  if (servicesError) throw new Error(servicesError.message);
+
+  const { data: activeDistricts, error: districtsError } = await supabase
+    .from('districts')
+    .select(`*, states (*)`)
+    .eq('status', 'published');
+
+  if (districtsError) throw new Error(districtsError.message);
+
+  const paths = [];
+  
+  for (const dbService of dbServices) {
+    for (const dbDistrict of activeDistricts) {
+      const service = {
+        slug: dbService.slug,
+        title: dbService.title,
+        market: dbService.market,
+        schemaType: dbService.schema_type,
+      };
+
+      const state = {
+        slug: dbDistrict.states.slug,
+        name: dbDistrict.states.name,
+        gridProvider: dbDistrict.states.grid_provider,
+        dieselCostEstimate: dbDistrict.states.diesel_cost_estimate,
+        environment: dbDistrict.states.environment, 
+      };
+
+      const district = {
+        slug: dbDistrict.slug,
+        name: dbDistrict.name,
+        gridBand: dbDistrict.grid_band,
+        averageDailyOutage: dbDistrict.average_daily_outage,
+        primaryGridIssue: dbDistrict.primary_grid_issue,
+        commonHardwareFailures: dbDistrict.common_hardware_failures,
+        targetSectors: dbDistrict.target_sectors,
+        localLandmarks: dbDistrict.local_landmarks,
+        financials: dbDistrict.financials, 
+        slaDispatchMinutes: dbDistrict.sla_dispatch_minutes,
+      };
+
+      paths.push({
+        params: { service: service.slug, state: state.slug, district: district.slug },
+        props: { service, state, district },
+      });
+    }
+  }
+  
+  return paths;
+}
+
+// 2. EXTRACT PROPS & CONTEXT
+const { service, state, district } = Astro.props;
+const isResidential = service.market === 'residential';
+const marketPrefix = isResidential ? 'Home' : 'Commercial';
+
+// 3. THE SPINTAX ENGINE (Avoiding Google's Boilerplate Penalty)
+const intros = {
+  residential: [
+    `For homeowners and estates in the ${district.name} axis (near ${district.localLandmarks.join(" and ")}), the constant noise and expense of petrol generators is no longer sustainable.`,
+    `Residents near ${district.localLandmarks[0]} in ${district.name} are tired of burning expensive petrol during ${district.averageDailyOutage} outages. A silent microgrid is the permanent fix.`,
+    `If you live in ${district.name}, specifically around ${district.localLandmarks[0]}, you know the frustration of ${state.gridProvider}'s unpredictable grid. It's time to upgrade your home's equity.`
+  ],
+  commercial: [
+    `For ${district.targetSectors.join(" and ")} operating in the ${district.name} axis (near ${district.localLandmarks[0]}), grid instability is a direct threat to operational profitability.`,
+    `Business operations around ${district.localLandmarks[0]} in ${district.name} are losing millions to diesel costs during ${district.averageDailyOutage} grid outages.`,
+    `With diesel at ${state.dieselCostEstimate}, ${district.targetSectors[0]} facilities in ${district.name} need a permanent solution to ${state.gridProvider}'s severe grid failures.`
+  ]
+};
+
+const introIndex = district.name.length % 3;
+const dynamicIntro = isResidential ? intros.residential[introIndex] : intros.commercial[introIndex];
+
+// 4. THE DETERMINISTIC IMAGE MATRIX (R2 Bucket)
+const CDN_URL = 'https://cdn.solarquotes.com.ng'; // <-- Update this if you used a different R2 domain
+
+const commercialImages = [
+  `${CDN_URL}/commercial-1.webp`,
+  `${CDN_URL}/commercial-2.webp`,
+  `${CDN_URL}/commercial-3.webp`,
+  `${CDN_URL}/commercial-4.webp`,
+  `${CDN_URL}/commercial-5.webp`,
+];
+
+const residentialImages = [
+  `${CDN_URL}/residential-1.webp`,
+  `${CDN_URL}/residential-2.webp`,
+  `${CDN_URL}/residential-3.webp`,
+  `${CDN_URL}/residential-4.webp`,
+  `${CDN_URL}/residential-5.webp`,
+];
+
+const imagePool = isResidential ? residentialImages : commercialImages;
+const stringHash = service.slug.length + district.name.length;
+const imageIndex = stringHash % imagePool.length;
+const dynamicHeroImage = imagePool[imageIndex];
+
+// 5. DYNAMIC METADATA & SCHEMA
+const pageTitle = `${marketPrefix} ${service.title} in ${district.name}, ${state.name} | Solar Quotes`;
+const metaDescription = isResidential 
+  ? `Stop burning petrol during ${district.averageDailyOutage} outages on ${state.gridProvider}. We provide silent, zero-emission ${service.title.toLowerCase()} near ${district.localLandmarks[0]}.`
+  : `Stop losing capital to ${district.averageDailyOutage} outages on ${state.gridProvider}. We provide enterprise ${service.title.toLowerCase()} near ${district.localLandmarks[0]} with a ${district.slaDispatchMinutes}-min SLA.`;
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": service.schemaType,
+  "name": `${marketPrefix} ${service.title} in ${district.name}`,
+  "provider": {
+    "@type": "LocalBusiness",
+    "name": "Solar Quotes Nigeria",
+    "image": "https://solarquotes.com.ng/logo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": district.name,
+      "addressRegion": state.name,
+      "addressCountry": "NG"
+    }
+  },
+  "areaServed": {
+    "@type": "Place",
+    "name": district.name
+  },
+  "description": metaDescription
+};
+---
+
+<BaseLayout title={pageTitle} description={metaDescription}>
+  <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <Breadcrumbs 
+      currentService={service.title} 
+      currentState={state.name} 
+      currentDistrict={district.name} 
+    />
+    
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-10">
+      
+      <!-- LEFT COL: Dynamic Sales & Engineering Copy -->
+      <section class="lg:col-span-7 space-y-10">
+        <div>
+          <div class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-800 mb-4">
+            <span class="flex h-2 w-2 rounded-full bg-emerald-600 mr-2 animate-pulse"></span>
+            SLA: {district.slaDispatchMinutes}-Minute Dispatch to {district.name}
+          </div>
+          <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 leading-tight mb-8">
+            {marketPrefix} <span class="text-emerald-600">{service.title}</span> in {district.name}
+          </h1>
+
+          <!-- Dynamic Local Edge Image -->
+          <div class="w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg mb-8 relative bg-gray-200">
+             <img 
+               src={dynamicHeroImage} 
+               alt={`${service.title} installed in ${district.name}, ${state.name}`} 
+               loading="eager"
+               class="object-cover w-full h-full" 
+             />
+             <div class="absolute inset-0 bg-gradient-to-t from-gray-900/40 to-transparent pointer-events-none"></div>
+          </div>
+        </div>
+        
+        <!-- Pain Point Agitation (Powered by Spintax) -->
+        <div class="prose prose-lg text-gray-600 max-w-none">
+           <p>{dynamicIntro}</p>
+           <p>
+             Currently, infrastructure on <strong>{state.gridProvider} {district.gridBand}</strong> is experiencing an average of <strong>{district.averageDailyOutage} of daily outages</strong>. 
+             {!isResidential && `Running a ${district.financials.typicalSystemSize} generator is costing businesses upwards of ₦${district.financials.estDieselSavings} in wasted capital every month.`}
+           </p>
+        </div>
+
+        <!-- Conditionally Render ROI Calculator for Commercial Only -->
+        {!isResidential && (
+          <div class="mt-8 mb-12">
+            <DieselRoiCalculator 
+              client:visible 
+              districtName={district.name}
+              dieselCostEstimate={state.dieselCostEstimate}
+              averageDailyOutage={district.averageDailyOutage}
+              bandTariffKwh={district.financials.bandTariffKwh}
+            />
+          </div>
+        )}
+
+        <!-- Technical Authority (The Moat) -->
+        <div class="bg-gray-50 border border-gray-100 rounded-2xl p-8 shadow-sm">
+          <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <svg class="h-6 w-6 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            Localized Engineering Context: {district.name}
+          </h3>
+          <p class="text-gray-700 mb-4">
+            Our engineering teams respond to specific infrastructural challenges in this district. We actively mitigate:
+          </p>
+          <ul class="space-y-3">
+            <li class="flex items-start">
+              <svg class="h-6 w-6 text-red-500 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span class="text-gray-700"><strong>Grid Issue:</strong> {district.primaryGridIssue}</span>
+            </li>
+            <li class="flex items-start">
+              <svg class="h-6 w-6 text-red-500 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span class="text-gray-700"><strong>Common Hardware Failures:</strong> {district.commonHardwareFailures.join(" and ")}.</span>
+            </li>
+            <li class="flex items-start">
+              <svg class="h-6 w-6 text-amber-500 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
+              <span class="text-gray-700"><strong>Environmental Impact:</strong> {state.environment.weatherChallenge}</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- RIGHT COL: Conversion Island -->
+      <aside class="lg:col-span-5 relative">
+        <div class="sticky top-8 bg-white p-8 rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+          <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+          
+          <h3 class="text-2xl font-bold text-gray-900 mb-2">
+            {isResidential ? "Get a Home Solar Quote" : "Book a Commercial Audit"}
+          </h3>
+          <p class="text-gray-500 mb-6 text-sm">
+            Bypass the call center. Connect directly with our {state.name} technical dispatch via WhatsApp.
+          </p>
+          
+          <!-- React Island: Hydrates only this form -->
+          <LeadCaptureForm 
+            client:load 
+            prefillService={service.title} 
+            prefillDistrict={district.name} 
+          />
+          
+          <div class="mt-6 pt-6 border-t border-gray-100 text-center">
+             <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Audits include</p>
+             <div class="flex justify-center gap-4 mt-3 text-sm text-gray-600 font-medium">
+               <span>✓ Load Profiling</span>
+               <span>{isResidential ? '✓ Roof Assessment' : '✓ Phase Balancing'}</span>
+             </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <NearbyDistricts 
+    currentServiceSlug={service.slug}
+    currentStateSlug={state.slug}
+    currentDistrictSlug={district.slug}
+  />
+</BaseLayout>

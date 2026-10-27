@@ -1,0 +1,180 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { supabase } from '../lib/supabase';
+
+// 1. DYNAMICALLY FETCH LIVE DATA FOR THE HOMEPAGE DIRECTORY
+// This ensures your homepage only links to pages that are actually built and live
+const { data: publishedDistricts } = await supabase
+  .from('districts')
+  .select('slug, name, states(slug, name)')
+  .eq('status', 'published')
+  .order('tier', { ascending: true })
+  .limit(6);
+
+const { data: services } = await supabase
+  .from('services')
+  .select('slug, title, market, short_name');
+
+// Separate services for UI categorization
+const commercialServices = services?.filter(s => s.market === 'commercial' || s.market === 'both') || [];
+const residentialServices = services?.filter(s => s.market === 'residential' || s.market === 'both') || [];
+---
+
+<BaseLayout 
+  title="Solar Quotes Nigeria | Commercial & Premium Residential Solar Engineers"
+  description="Engineering Tier-1 hybrid solar arrays to eliminate diesel dependency across Nigeria. SLA-backed installations for businesses, estates, and heavy industries."
+>
+  <main class="flex flex-col min-h-screen">
+    
+    {/* 1. HERO SECTION: High-Trust & Conversion-Focused */}
+    <section class="relative bg-gray-900 overflow-hidden">
+      <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1509391366360-515434863375?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent"></div>
+      
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+        <div class="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-300 mb-6">
+          <span class="flex h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+          Now dispatching in Abuja (FCT) & Lagos State
+        </div>
+        
+        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight max-w-4xl">
+          Stop Burning Diesel. <br class="hidden md:block"/>
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+            Start Building Equity.
+          </span>
+        </h1>
+        
+        <p class="mt-6 text-xl text-gray-300 max-w-2xl leading-relaxed">
+          We engineer SLA-backed, Tier-1 solar microgrids designed specifically for Nigeria's toughest grid environments. From heavy industrial load-balancing to zero-downtime diplomatic residences.
+        </p>
+        
+        <div class="mt-10 flex flex-col sm:flex-row gap-4">
+          <a href="#coverage" class="inline-flex justify-center items-center px-8 py-4 text-base font-bold rounded-lg text-gray-900 bg-emerald-400 hover:bg-emerald-300 transition-colors">
+            Find Your District
+          </a>
+          <a href="#case-studies" class="inline-flex justify-center items-center px-8 py-4 text-base font-bold rounded-lg text-white border border-gray-600 hover:bg-gray-800 transition-colors">
+            View Engineering Data
+          </a>
+        </div>
+      </div>
+    </section>
+
+    {/* 2. THE PSEO DIRECTORY MATRIX (Crucial for Googlebot Crawling) */}
+    <section id="coverage" class="py-20 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <h2 class="text-3xl font-bold text-gray-900">Active Engineering Zones</h2>
+          <p class="mt-4 text-lg text-gray-600">Select your local district to view live pricing, grid outage profiles, and automated ROI calculators customized for your infrastructure.</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-12">
+          {/* Commercial Hubs */}
+          <div class="bg-gray-50 rounded-2xl p-8 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center border-b border-gray-200 pb-4">
+              <svg class="w-6 h-6 text-emerald-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+              Commercial & Industrial
+            </h3>
+            <ul class="space-y-3">
+              {publishedDistricts?.map((district) => (
+                <li>
+                  <a href={`/commercial-solar-hybrid/${district.states.slug}/${district.slug}`} class="group flex justify-between items-center text-gray-600 hover:text-emerald-700 transition-colors">
+                    <span class="font-medium">Commercial Solar in {district.name}, {district.states.name}</span>
+                    <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Residential Hubs */}
+          <div class="bg-gray-50 rounded-2xl p-8 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center border-b border-gray-200 pb-4">
+              <svg class="w-6 h-6 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+              Premium Residential
+            </h3>
+            <ul class="space-y-3">
+              {publishedDistricts?.map((district) => (
+                <li>
+                  <a href={`/residential-premium-backup/${district.states.slug}/${district.slug}`} class="group flex justify-between items-center text-gray-600 hover:text-amber-600 transition-colors">
+                    <span class="font-medium">Home Backup in {district.name}, {district.states.name}</span>
+                    <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* 3. CASE STUDIES (Polished & Grid-Aligned) */}
+    <section id="case-studies" class="py-20 bg-gray-50 border-t border-gray-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-16">
+          <h2 class="text-3xl font-bold text-gray-900">Engineering Case Studies</h2>
+          <p class="mt-4 text-lg text-gray-600 max-w-2xl">Real-world deployments mitigating grid instability, phase imbalances, and diesel bleed across Nigeria's toughest infrastructural environments.</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+          {/* Card 1 */}
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+            <div class="p-6">
+              <div class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">Residential • Maitama, FCT</div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3">Zero-Downtime Microgrid for Diplomatic Compound</h3>
+              <p class="text-gray-600 text-sm mb-6">Eliminated 100% of diesel dependency for a high-security residence facing erratic voltage spikes and 3-hour daily localized grid failures.</p>
+              <div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                <div>
+                  <div class="text-xs text-gray-500">Topology</div>
+                  <div class="font-bold text-gray-900">30kVA 3-Phase</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">Proj. IRR</div>
+                  <div class="font-bold text-emerald-600">41%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+            <div class="p-6">
+              <div class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">Industrial • Ikeja GRA, Lagos</div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3">Heavy Inductive Load Phase Balancing</h3>
+              <p class="text-gray-600 text-sm mb-6">Engineered a synchronized hybrid array to stabilize extreme phase imbalances caused by heavy injection molding machines.</p>
+              <div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                <div>
+                  <div class="text-xs text-gray-500">Topology</div>
+                  <div class="font-bold text-gray-900">150kVA Hybrid</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">Proj. IRR</div>
+                  <div class="font-bold text-emerald-600">54%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+            <div class="p-6">
+              <div class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">Healthcare • Wuse, FCT</div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3">Medical-Grade Power Security for Diagnostics</h3>
+              <p class="text-gray-600 text-sm mb-6">Provided uninterrupted, pure sine-wave power to MRI and continuous-monitoring ICU equipment, eliminating data corruption.</p>
+              <div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                <div>
+                  <div class="text-xs text-gray-500">Topology</div>
+                  <div class="font-bold text-gray-900">50kVA Med-Grade</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">Proj. IRR</div>
+                  <div class="font-bold text-emerald-600">46%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>

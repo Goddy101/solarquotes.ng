@@ -1,0 +1,59 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = "404: Off The Grid | Solar Quotes Nigeria";
+const description = "The page you are looking for could not be found or has been moved.";
+---
+
+<BaseLayout title={title} description={description}>
+  <!-- CRITICAL FOR SEO: We inject this into the head slot to prevent Google from indexing the error page -->
+  <meta name="robots" content="noindex, follow" slot="head" />
+
+  <main class="flex-grow flex items-center justify-center min-h-[75vh] px-4 sm:px-6 lg:px-8 py-16 bg-gray-50">
+    <div class="max-w-3xl w-full text-center space-y-8">
+      
+      <!-- Brand Icon / Graphic -->
+      <div class="mx-auto w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-8 shadow-sm">
+        <svg class="w-12 h-12 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
+        </svg>
+      </div>
+
+      <!-- Error Message -->
+      <div>
+        <h2 class="text-sm font-extrabold text-emerald-600 tracking-widest uppercase mb-3">Error 404</h2>
+        <h1 class="text-4xl sm:text-6xl font-extrabold text-gray-900 tracking-tight mb-4">
+          System <span class="text-emerald-500">Off-Grid</span>
+        </h1>
+        <p class="text-lg text-gray-600 max-w-xl mx-auto">
+          The page or location you are looking for has been moved, deleted, or never existed. Let's get your connection restored.
+        </p>
+      </div>
+
+      <!-- Recovery Routing (SEO Silo Bridges) -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto pt-8">
+        
+        <a href="/" class="group flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-xl hover:border-emerald-500 hover:shadow-md transition-all">
+          <svg class="w-6 h-6 text-gray-400 group-hover:text-emerald-500 mb-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          <span class="font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">Homepage</span>
+        </a>
+
+        <a href="/#locations" class="group flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-xl hover:border-emerald-500 hover:shadow-md transition-all">
+          <svg class="w-6 h-6 text-gray-400 group-hover:text-emerald-500 mb-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span class="font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">Regional Hubs</span>
+        </a>
+
+        <a href="/case-studies" class="group flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-xl hover:border-emerald-500 hover:shadow-md transition-all">
+          <svg class="w-6 h-6 text-gray-400 group-hover:text-emerald-500 mb-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          <span class="font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">Case Studies</span>
+        </a>
+
+      </div>
+
+      <div class="pt-8 text-center text-sm text-gray-500">
+        Need immediate technical assistance? <a href="https://wa.me/2348030000000" class="font-bold text-emerald-600 hover:text-emerald-700">Contact Dispatch &rarr;</a>
+      </div>
+      
+    </div>
+  </main>
+</BaseLayout>
