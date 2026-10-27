@@ -1,16 +1,23 @@
 ---
-
 import '../styles/global.css';
+
 export interface Props {
   title: string;
   description: string;
+  ogImage?: string;
 }
 
-const { title, description } = Astro.props;
+// THE FIX: We must extract ogImage here and give it a fallback!
+const { 
+  title, 
+  description,
+  ogImage = 'https://solarquotes.com.ng/og?title=Tier%201%20Solar%20Engineering&subtitle=Solar%20Quotes%20Nigeria'
+} = Astro.props;
 
 // Your central dispatch number for the sticky CTAs
 const WHATSAPP_NUMBER = "+234 916 839 9707"; 
-const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=Hello%20Solar%20Quotes,%20I%20am%20interested%20in%20a%20solar%20audit.`;
+const WHATSAPP_LINK = `https://wa.me/2349168399707?text=Hello%20Solar%20Quotes,%20I%20am%20interested%20in%20a%20solar%20audit.`;
+---
 ---
 
 <!DOCTYPE html>
@@ -22,6 +29,11 @@ const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=Hello%20Solar%20Quo
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+
+
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
     
     <!-- Open Graph for Social Sharing -->
     <meta property="og:title" content={title} />

@@ -86,7 +86,7 @@ const introIndex = district.name.length % 3;
 const dynamicIntro = isResidential ? intros.residential[introIndex] : intros.commercial[introIndex];
 
 // 4. THE DETERMINISTIC IMAGE MATRIX (R2 Bucket)
-const CDN_URL = 'https://cdn.solarquotes.com.ng'; // <-- Update this if you used a different R2 domain
+const CDN_URL = 'https://cdn.solarquotes.com.ng'; 
 
 const commercialImages = [
   `${CDN_URL}/commercial-1.webp`,
@@ -136,9 +136,15 @@ const schema = {
   },
   "description": metaDescription
 };
+
+// 6. GENERATE THE DYNAMIC OG IMAGE URL
+const encodedTitle = encodeURIComponent(`${service.title} in ${district.name}`);
+const encodedSubtitle = encodeURIComponent(`${district.slaDispatchMinutes}-Min SLA Dispatch`);
+const bgFilename = dynamicHeroImage.split('/').pop(); 
+const ogImageUrl = `https://solarquotes.com.ng/og?title=${encodedTitle}&subtitle=${encodedSubtitle}&bg=${bgFilename}`;
 ---
 
-<BaseLayout title={pageTitle} description={metaDescription}>
+<BaseLayout title={pageTitle} description={metaDescription} ogImage={ogImageUrl}>
   <script type="application/ld+json" set:html={JSON.stringify(schema)} />
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
