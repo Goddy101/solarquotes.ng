@@ -6,6 +6,7 @@ import Breadcrumbs from '../../../components/astro/Breadcrumbs.astro';
 import NearbyDistricts from '../../../components/astro/NearbyDistricts.astro';
 import { supabase } from '../../../lib/supabase';
 
+
 // 1. GENERATE ALL ROUTES AT BUILD TIME FROM SUPABASE
 export async function getStaticPaths() {
   const { data: dbServices, error: servicesError } = await supabase
@@ -22,9 +23,13 @@ export async function getStaticPaths() {
   if (districtsError) throw new Error(districtsError.message);
 
   const paths = [];
+
+  // DEFENSIVE FILTER: Strip out any broken data before looping
+  const validServices = dbServices?.filter(s => s && s.slug) || [];
+  const validDistricts = activeDistricts?.filter(d => d && d.slug && d.states && d.states.slug) || [];
   
-  for (const dbService of dbServices) {
-    for (const dbDistrict of activeDistricts) {
+  for (const dbService of validServices) {
+    for (const dbDistrict of validDistricts) {
       const service = {
         slug: dbService.slug,
         title: dbService.title,
@@ -33,7 +38,7 @@ export async function getStaticPaths() {
       };
 
       const state = {
-        slug: dbDistrict.states.slug,
+        slug: dbDistrict.states.slug, // 100% safe now
         name: dbDistrict.states.name,
         gridProvider: dbDistrict.states.grid_provider,
         dieselCostEstimate: dbDistrict.states.diesel_cost_estimate,
@@ -47,10 +52,10 @@ export async function getStaticPaths() {
         gridBand: dbDistrict.grid_band,
         averageDailyOutage: dbDistrict.average_daily_outage,
         primaryGridIssue: dbDistrict.primary_grid_issue,
-        commonHardwareFailures: dbDistrict.common_hardware_failures,
-        targetSectors: dbDistrict.target_sectors,
-        localLandmarks: dbDistrict.local_landmarks,
-        financials: dbDistrict.financials, 
+        commonHardwareFailures: dbDistrict.common_hardware_failures || [],
+        targetSectors: dbDistrict.target_sectors || [],
+        localLandmarks: dbDistrict.local_landmarks || [],
+        financials: dbDistrict.financials || {}, 
         slaDispatchMinutes: dbDistrict.sla_dispatch_minutes,
       };
 
