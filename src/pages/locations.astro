@@ -1,0 +1,126 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { supabase } from '../lib/supabase';
+
+// 1. DEFENSIVE FETCHING & SORTING
+// Always order at the database level for deterministic builds
+const { data: rawServices, error: servicesError } = await supabase
+  .from('services')
+  .select('*')
+  .order('title');
+
+if (servicesError) console.error("Error fetching services:", servicesError);
+
+const { data: rawDistricts, error: districtsError } = await supabase
+  .from('districts')
+  .select('*, states(*)')
+  .eq('status', 'published')
+  .order('name'); // Alphabetical sorting for better UX
+
+if (districtsError) console.error("Error fetching districts:", districtsError);
+
+// 2. STRICT FILTERING
+const validServices = rawServices?.filter(s => s && s.slug) || [];
+const validDistricts = rawDistricts?.filter(d => d && d.slug && d.states && d.states.slug && d.states.name) || [];
+
+// 3. ENTERPRISE DATA STRUCTURING
+// Output shape: { "Lagos": { slug: "lagos", services: { "Commercial Solar": [district1, district2] } } }
+const locationTree = validDistricts.reduce((tree, district) => {
+  const stateName = district.states.name;
+  const stateSlug = district.states.slug;
+
+  if (!tree[stateName]) {
+    tree[stateName] = { 
+      slug: stateSlug, 
+      services: {} 
+    };
+    // Initialize all valid services for this state
+    validServices.forEach(service => {
+      tree[stateName].services[service.title] = {
+        slug: service.slug,
+        districts: []
+      };
+    });
+  }
+
+  // Push district into every service category for this state
+  validServices.forEach(service => {
+    tree[stateName].services[service.title].districts.push(district);
+  });
+
+  return tree;
+}, {});
+
+// Sort states alphabetically
+const sortedStates = Object.keys(locationTree).sort();
+
+const pageTitle = "Areas We Serve | Solar Quotes Nigeria";
+const metaDescription = "Explore our service areas across Nigeria. Enterprise solar microgrids, residential backup, and SLA-backed maintenance in Lagos, Abuja, Kano, and Rivers.";
+---
+
+<BaseLayout title={pageTitle} description={metaDescription}>
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="max-w-3xl mx-auto text-center mb-16">
+      <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
+        Areas We Serve
+      </h1>
+      <p class="mt-4 text-xl text-gray-600">
+        Select your state below to find dedicated engineering teams, commercial installers, and maintenance hubs in your district.
+      </p>
+    </div>
+
+    <!-- 4. NATIVE HTML ACCORDIONS (Zero JS, Infinite Scale) -->
+    <div class="max-w-4xl mx-auto space-y-6">
+      {sortedStates.map((stateName) => {
+        const stateData = locationTree[stateName];
+        
+        return (
+          <details class="group bg-white border border-gray-200 rounded-2xl shadow-sm [&_summary::-webkit-details-marker]:hidden">
+            <summary class="flex cursor-pointer items-center justify-between gap-1.5 p-6 text-gray-900 hover:bg-gray-50 transition-colors rounded-2xl">
+              <h2 class="text-2xl font-bold text-emerald-800">
+                {stateName} State
+              </h2>
+              
+              <span class="relative h-6 w-6 shrink-0 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="absolute inset-0 m-auto h-4 w-4 opacity-100 group-open:opacity-0 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="absolute inset-0 m-auto h-4 w-4 opacity-0 group-open:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />
+                </svg>
+              </span>
+            </summary>
+
+            <div class="px-6 pb-6 pt-2 border-t border-gray-100">
+              <div class="space-y-10 mt-4">
+                {Object.entries(stateData.services).map(([serviceTitle, serviceData]) => (
+                  serviceData.districts.length > 0 && (
+                    <div>
+                      <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center">
+                        <span class="bg-gray-100 h-px flex-grow mr-4"></span>
+                        {serviceTitle}
+                        <span class="bg-gray-100 h-px flex-grow ml-4"></span>
+                      </h3>
+                      
+                      <!-- HIGH DENSITY PILL GRID -->
+                      <div class="flex flex-wrap gap-3">
+                        {serviceData.districts.map(district => (
+                          <a 
+                            href={`/${serviceData.slug}/${stateData.slug}/${district.slug}`}
+                            class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-50 border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all shadow-sm hover:shadow"
+                          >
+                            {district.name}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  </main>
+</BaseLayout>
